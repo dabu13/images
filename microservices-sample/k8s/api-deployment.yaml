@@ -13,6 +13,10 @@ spec:
       labels:
         app: sample-api
     spec:
+      initContainers:
+      - name: wait-for-db
+        image: postgres:15-alpine
+        command: ['sh', '-c', 'until pg_isready -h postgres -p 5432 -U postgres; do echo waiting for database; sleep 2; done;']
       containers:
       - name: sample-api
         image: REPLACE_WITH_ACR/sample-api:latest
@@ -29,3 +33,15 @@ spec:
           value: "5432"
         ports:
         - containerPort: 3000
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 2
+          periodSeconds: 5

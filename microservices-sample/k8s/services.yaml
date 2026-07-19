@@ -17,6 +17,7 @@ metadata:
   name: sample-ui
   namespace: sample-app
 spec:
+  type: LoadBalancer
   selector:
     app: sample-ui
   ports:
