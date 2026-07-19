@@ -60,7 +60,7 @@ jobs:
       - name: Set AKS context
         run: |
           set -e
-          CLUSTER_NAME="${{ secrets.AKS_CLUSTER_NAME || 'cloudsecuritytest-dns-z9v5dm98.hcp.eastus.azmk8s.io' }}"
+          CLUSTER_NAME="${{ secrets.AKS_CLUSTER_NAME || 'cloudsecuritytest' }}"
           RG="${{ secrets.AKS_RESOURCE_GROUP }}"
           if [ -z "$RG" ]; then
             RG=$(az aks list --query "[?fqdn=='${CLUSTER_NAME}'].resourceGroup | [0]" -o tsv)
