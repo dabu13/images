@@ -15,6 +15,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Validate ACR secrets
+        run: |
+          set -e
+          if [ -z "${{ secrets.ACR_REGISTRY }}" ]; then
+            echo "ERROR: ACR_REGISTRY secret is required." >&2
+            exit 1
+          fi
+          if [ -z "${{ secrets.ACR_USERNAME }}" ]; then
+            echo "ERROR: ACR_USERNAME secret is required." >&2
+            exit 1
+          fi
+          if [ -z "${{ secrets.ACR_PASSWORD }}" ]; then
+            echo "ERROR: ACR_PASSWORD secret is required." >&2
+            exit 1
+          fi
+
       - name: Login to ACR
         uses: docker/login-action@v2
         with:
@@ -74,7 +90,8 @@ jobs:
         run: |
           set -e
           az aks install-cli
-          export PATH="$PATH:$HOME/.azure-kubectl"
+          mkdir -p $HOME/.azure-kubectl
+          export PATH="$HOME/.azure-kubectl:$PATH"
           if ! command -v kubelogin >/dev/null 2>&1; then
             echo "Installing kubelogin"
             curl -L https://github.com/Azure/kubelogin/releases/download/v0.2.19/kubelogin.zip -o kubelogin.zip
@@ -82,8 +99,8 @@ jobs:
             chmod +x ./bin/linux_amd64/kubelogin
             mkdir -p $HOME/.azure-kubelogin
             mv ./bin/linux_amd64/kubelogin $HOME/.azure-kubelogin/
-            export PATH="$PATH:$HOME/.azure-kubelogin"
           fi
+          export PATH="$HOME/.azure-kubectl:$HOME/.azure-kubelogin:$PATH"
           kubelogin --version
           kubectl version --client
 
@@ -94,7 +111,7 @@ jobs:
           RG="${{ secrets.AKS_RESOURCE_GROUP }}"
           echo "Using cluster: $CLUSTER_NAME"
           echo "Using resource group: $RG"
-          az aks get-credentials --resource-group "$RG" --name "$CLUSTER_NAME" --overwrite-existing
+          az aks get-credentials --resource-group "$RG" --name "$CLUSTER_NAME" --admin --overwrite-existing
 
       - name: Deploy Helm chart to AKS
         run: |
