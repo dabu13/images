@@ -11,17 +11,17 @@ spec:
   rules:
   - http:
       paths:
-      - path: {{ .Values.ingress.rules._api.path }}
+      - path: {{ .Values.ingress.rules.api.path }}
         pathType: Prefix
         backend:
           service:
-            name: {{ .Values.ingress.rules._api.serviceName }}
+            name: {{ .Values.ingress.rules.api.serviceName }}
             port:
-              number: {{ .Values.ingress.rules._api.servicePort }}
-      - path: {{ .Values.ingress.rules._ui.path }}
+              number: {{ .Values.ingress.rules.api.servicePort }}
+      - path: {{ .Values.ingress.rules.ui.path }}
         pathType: Prefix
         backend:
           service:
-            name: {{ .Values.ingress.rules._ui.serviceName }}
+            name: {{ .Values.ingress.rules.ui.serviceName }}
             port:
-              number: {{ .Values.ingress.rules._ui.servicePort }}
+              number: {{ .Values.ingress.rules.ui.servicePort }}

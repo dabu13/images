@@ -21,11 +21,11 @@ ingress:
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: "/$1"
   rules:
-    - api:
-        path: /api(/|$)(.*)
-        serviceName: sample-api
-        servicePort: 3000
-      ui:
-        path: /(.*)
-        serviceName: sample-ui
-        servicePort: 80
+    api:
+      path: /api(/|$)(.*)
+      serviceName: sample-api
+      servicePort: 3000
+    ui:
+      path: /(.*)
+      serviceName: sample-ui
+      servicePort: 80

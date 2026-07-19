@@ -52,28 +52,48 @@ jobs:
 
       - name: Azure CLI login
         run: |
+          set -e
           az login --service-principal -u "${{ secrets.AZURE_CLIENT_ID }}" \
             -p "${{ secrets.AZURE_CLIENT_SECRET }}" \
             --tenant "${{ secrets.AZURE_TENANT_ID }}"
           az account set --subscription "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
 
+      - name: Validate AKS settings
+        run: |
+          set -e
+          if [ -z "${{ secrets.AKS_CLUSTER_NAME }}" ]; then
+            echo "ERROR: AKS_CLUSTER_NAME secret is required." >&2
+            exit 1
+          fi
+          if [ -z "${{ secrets.AKS_RESOURCE_GROUP }}" ]; then
+            echo "ERROR: AKS_RESOURCE_GROUP secret is required." >&2
+            exit 1
+          fi
+
+      - name: Install AKS credential tools
+        run: |
+          set -e
+          az aks install-cli
+          export PATH="$PATH:$HOME/.azure-kubectl"
+          if ! command -v kubelogin >/dev/null 2>&1; then
+            echo "Installing kubelogin"
+            curl -L https://github.com/Azure/kubelogin/releases/download/v0.2.19/kubelogin.zip -o kubelogin.zip
+            unzip -q kubelogin.zip
+            chmod +x ./bin/linux_amd64/kubelogin
+            mkdir -p $HOME/.azure-kubelogin
+            mv ./bin/linux_amd64/kubelogin $HOME/.azure-kubelogin/
+            export PATH="$PATH:$HOME/.azure-kubelogin"
+          fi
+          kubelogin --version
+          kubectl version --client
+
       - name: Set AKS context
         run: |
           set -e
-          CLUSTER_NAME="${{ secrets.AKS_CLUSTER_NAME || 'cloudsecuritytest' }}"
+          CLUSTER_NAME="${{ secrets.AKS_CLUSTER_NAME }}"
           RG="${{ secrets.AKS_RESOURCE_GROUP }}"
-          if [ -z "$RG" ]; then
-            RG=$(az aks list --query "[?fqdn=='${CLUSTER_NAME}'].resourceGroup | [0]" -o tsv)
-          fi
-          if [ -z "$RG" ]; then
-            RG=$(az aks list --query "[?name=='${CLUSTER_NAME}'].resourceGroup | [0]" -o tsv)
-          fi
-          if [ -z "$RG" ]; then
-            echo "ERROR: AKS_RESOURCE_GROUP secret is missing and could not be discovered from cluster name." >&2
-            echo "Set AKS_RESOURCE_GROUP to the AKS resource group name or verify AKS_CLUSTER_NAME." >&2
-            exit 1
-          fi
-          echo "Using AKS resource group: $RG"
+          echo "Using cluster: $CLUSTER_NAME"
+          echo "Using resource group: $RG"
           az aks get-credentials --resource-group "$RG" --name "$CLUSTER_NAME" --overwrite-existing
 
       - name: Deploy Helm chart to AKS
