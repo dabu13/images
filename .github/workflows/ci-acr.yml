@@ -114,12 +114,25 @@ jobs:
           az aks get-credentials --resource-group "$RG" --name "$CLUSTER_NAME" --admin --overwrite-existing
 
       - name: Deploy Kubernetes manifests to AKS
+        env:
+          API_IMAGE: ${{ needs.build-and-push.outputs.api_image }}
+          UI_IMAGE: ${{ needs.build-and-push.outputs.ui_image }}
         run: |
           set -e
-          echo "API_IMAGE=${{ needs.build-and-push.outputs.api_image }}"
-          echo "UI_IMAGE=${{ needs.build-and-push.outputs.ui_image }}"
-          sed -i "s|REPLACE_WITH_ACR/sample-api:latest|${{ needs.build-and-push.outputs.api_image }}|g" ./microservices-sample/k8s/api-deployment.yaml
-          sed -i "s|REPLACE_WITH_ACR/sample-ui:latest|${{ needs.build-and-push.outputs.ui_image }}|g" ./microservices-sample/k8s/ui-deployment.yaml
+          set -x
+          echo "API_IMAGE=${API_IMAGE}"
+          echo "UI_IMAGE=${UI_IMAGE}"
+          if [ -z "$API_IMAGE" ]; then
+            echo "ERROR: API_IMAGE is empty" >&2
+            exit 1
+          fi
+          if [ -z "$UI_IMAGE" ]; then
+            echo "ERROR: UI_IMAGE is empty" >&2
+            exit 1
+          fi
+          sed -i "s|REPLACE_WITH_ACR/sample-api:latest|$API_IMAGE|g" ./microservices-sample/k8s/api-deployment.yaml
+          sed -i "s|REPLACE_WITH_ACR/sample-ui:latest|$UI_IMAGE|g" ./microservices-sample/k8s/ui-deployment.yaml
+          grep -n 'image:' ./microservices-sample/k8s/api-deployment.yaml ./microservices-sample/k8s/ui-deployment.yaml
           kubectl create namespace sample-app --dry-run=client -o yaml | kubectl apply -f -
           kubectl apply -f ./microservices-sample/k8s
 
