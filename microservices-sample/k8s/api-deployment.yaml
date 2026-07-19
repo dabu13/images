@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample-api
+  namespace: sample-app
+spec:
+  selector:
+    matchLabels:
+      app: sample-api
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: sample-api
+    spec:
+      containers:
+      - name: sample-api
+        image: REPLACE_WITH_ACR/sample-api:latest
+        env:
+        - name: PGHOST
+          value: "postgres"
+        - name: PGUSER
+          value: "postgres"
+        - name: PGPASSWORD
+          value: "postgres"
+        - name: PGDATABASE
+          value: "sampledb"
+        - name: PGPORT
+          value: "5432"
+        ports:
+        - containerPort: 3000

@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample-ui
+  namespace: sample-app
+spec:
+  selector:
+    matchLabels:
+      app: sample-ui
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: sample-ui
+    spec:
+      containers:
+      - name: sample-ui
+        image: REPLACE_WITH_ACR/sample-ui:latest
+        ports:
+        - containerPort: 80
