@@ -18,10 +18,7 @@ jobs:
       - name: Azure login
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Login to ACR using Azure session
         uses: azure/docker-login@v1
@@ -59,10 +56,7 @@ jobs:
       - name: Azure login
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Set AKS context
         uses: azure/aks-set-context@v4
@@ -70,17 +64,14 @@ jobs:
           resource-group: ${{ secrets.AKS_RESOURCE_GROUP }}
           cluster-name: ${{ secrets.AKS_CLUSTER_NAME || 'cloudsecuritytest-dns-z9v5dm98.hcp.eastus.azmk8s.io' }}
 
-      - name: Deploy manifests to AKS
+      - name: Deploy Helm chart to AKS
         run: |
           set -e
-          echo "Using API image: ${{ needs.build-and-push.outputs.api_image }}"
-          echo "Using UI image: ${{ needs.build-and-push.outputs.ui_image }}"
-
-          sed -i "s|REPLACE_WITH_ACR/sample-api:latest|${{ needs.build-and-push.outputs.api_image }}|g" ./microservices-sample/k8s/api-deployment.yaml
-          sed -i "s|REPLACE_WITH_ACR/sample-ui:latest|${{ needs.build-and-push.outputs.ui_image }}|g" ./microservices-sample/k8s/ui-deployment.yaml
-
-          kubectl create namespace sample-app --dry-run=client -o yaml | kubectl apply -f -
-          find ./microservices-sample/k8s -maxdepth 1 -name '*.yaml' ! -name 'ingress.yaml' -print0 | xargs -0 kubectl apply -f -
+          helm upgrade --install sample-app ./microservices-sample/helm/sample-app \
+            --namespace sample-app \
+            --create-namespace \
+            --set image.api=${{ needs.build-and-push.outputs.api_image }} \
+            --set image.ui=${{ needs.build-and-push.outputs.ui_image }}
 
       - name: Wait for rollout
         run: |

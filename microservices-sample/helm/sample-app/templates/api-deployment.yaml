@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample-api
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: sample-api
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: sample-api
+    spec:
+      containers:
+        - name: sample-api
+          image: {{ .Values.image.api | quote }}
+          env:
+            - name: PGHOST
+              value: "postgres"
+            - name: PGUSER
+              value: "{{ .Values.postgres.user }}"
+            - name: PGPASSWORD
+              value: "{{ .Values.postgres.password }}"
+            - name: PGDATABASE
+              value: "{{ .Values.postgres.database }}"
+            - name: PGPORT
+              value: "5432"
+          ports:
+            - containerPort: 3000

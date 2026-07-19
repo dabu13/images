@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample-ui
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: sample-ui
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: sample-ui
+    spec:
+      containers:
+        - name: sample-ui
+          image: {{ .Values.image.ui | quote }}
+          ports:
+            - containerPort: 80

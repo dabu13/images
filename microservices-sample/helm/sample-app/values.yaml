@@ -1,0 +1,31 @@
+replicaCount: 1
+namespace: sample-app
+image:
+  api: "REPLACE_WITH_API_IMAGE"
+  ui: "REPLACE_WITH_UI_IMAGE"
+postgres:
+  image: "postgres:15-alpine"
+  user: "postgres"
+  password: "postgres"
+  database: "sampledb"
+  persistence:
+    enabled: true
+    size: 5Gi
+service:
+  api:
+    port: 3000
+  ui:
+    port: 80
+ingress:
+  enabled: true
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: "/$1"
+  rules:
+    - api:
+        path: /api(/|$)(.*)
+        serviceName: sample-api
+        servicePort: 3000
+      ui:
+        path: /(.*)
+        serviceName: sample-ui
+        servicePort: 80
