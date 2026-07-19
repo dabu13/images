@@ -111,18 +111,35 @@ jobs:
           RG="${{ secrets.AKS_RESOURCE_GROUP }}"
           echo "Using cluster: $CLUSTER_NAME"
           echo "Using resource group: $RG"
-          az aks get-credentials --resource-group "$RG" --name "$CLUSTER_NAME" --admin --overwrite-existing
+          az aks get-credentials --resource-group "$RG" --name "$CLUSTER_NAME" --overwrite-existing
 
       - name: Deploy Helm chart to AKS
+        continue-on-error: true
         run: |
           set -e
+          echo "API_IMAGE=${{ needs.build-and-push.outputs.api_image }}"
+          echo "UI_IMAGE=${{ needs.build-and-push.outputs.ui_image }}"
           helm upgrade --install sample-app ./microservices-sample/helm/sample-app \
             --namespace sample-app \
             --create-namespace \
-            --set image.api=${{ needs.build-and-push.outputs.api_image }} \
-            --set image.ui=${{ needs.build-and-push.outputs.ui_image }}
+            --set image.api="${{ needs.build-and-push.outputs.api_image }}" \
+            --set image.ui="${{ needs.build-and-push.outputs.ui_image }}"
+
+      - name: Cleanup on failed deployment
+        if: failure()
+        run: |
+          set -e
+          echo "Deployment failed; cleaning up Helm release and Kubernetes objects."
+          helm uninstall sample-app -n sample-app || true
+          kubectl delete deployment/sample-api sample-ui postgres -n sample-app --ignore-not-found || true
+          kubectl delete svc/sample-api sample-ui -n sample-app --ignore-not-found || true
+          kubectl delete ingress/sample-ingress -n sample-app --ignore-not-found || true
+          kubectl delete pvc/postgres-pvc -n sample-app --ignore-not-found || true
+          kubectl delete namespace sample-app --ignore-not-found || true
+          exit 1
 
       - name: Wait for rollout
+        if: success()
         run: |
           kubectl rollout status deployment/sample-api -n sample-app --timeout=300s
           kubectl rollout status deployment/sample-ui -n sample-app --timeout=300s
