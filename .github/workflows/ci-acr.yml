@@ -111,7 +111,7 @@ jobs:
           RG="${{ secrets.AKS_RESOURCE_GROUP }}"
           echo "Using cluster: $CLUSTER_NAME"
           echo "Using resource group: $RG"
-          az aks get-credentials --resource-group "$RG" --name "$CLUSTER_NAME" --overwrite-existing
+          az aks get-credentials --resource-group "$RG" --name "$CLUSTER_NAME" --admin --overwrite-existing
 
       - name: Deploy Helm chart to AKS
         continue-on-error: true
