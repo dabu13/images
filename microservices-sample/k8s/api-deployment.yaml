@@ -15,7 +15,7 @@ spec:
     spec:
       initContainers:
       - name: wait-for-db
-        image: postgres:15-alpine
+        image: postgres:16-alpine
         command: ['sh', '-c', 'until pg_isready -h postgres -p 5432 -U postgres; do echo waiting for database; sleep 2; done;']
       containers:
       - name: sample-api
